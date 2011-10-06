@@ -74,18 +74,38 @@ class ref_tracking_proxy(object):
 		res.deps = self
 		return res
 
-import inspect
 no_override = set(['__new__', '__del__', '__init__', '__instancecheck__', '__subclasshook__', '__getattr__', '__getattribute__', '__setattr__', '__str__', '__repr__'])
 for m in special_methods - no_override:
 	if m not in ref_tracking_proxy.__dict__:
 		def proxyfunc(self, *args, **kwargs):
-			#try:
-			#	print inspect.stack()[0]
-			#except:
-			#	pass
 			deps = (self, args, kwargs)
 			return ref_tracking_proxy(deps)
 		proxyfunc.__name__ = 'PROXY__' + m
 		setattr(ref_tracking_proxy, m, proxyfunc)
 
+
+class passthru(object):
+		
+	def __init__(self):
+		pass
+	
+	def __getattr__(self, name):
+		return passthru()
+	
+	def __int__(self):
+		return int()
+	
+	def __float__(self):
+		return float()
+	
+	def __long__(self):
+		return long()
+
+no_override = set(['__new__', '__del__', '__init__', '__instancecheck__', '__subclasshook__', '__getattr__', '__getattribute__', '__setattr__', '__str__', '__repr__'])
+for m in special_methods - no_override:
+	if m not in passthru.__dict__:
+		def proxyfunc(self, *args, **kwargs):
+			return self
+		proxyfunc.__name__ = 'passthru.%s' % m
+		setattr(passthru, m, proxyfunc)
 
