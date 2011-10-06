@@ -10,4 +10,5 @@ if __name__ == '__main__':
 	x = A.select(lambda val: {'x': val})
 	y = B.select(lambda val: {'y': val})
 	z = hjoin(x, y)
+	print z.select(lambda x, y: { 'z': x * y }).fetch(100)
 
