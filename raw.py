@@ -1,11 +1,25 @@
 from curs import cursor, All
 import dtype
+import util
 
 import mmap
 import numpy
 
 class RawCur(cursor):
 	
+	class RandIter(cursor):
+		
+		def __init__(self, rawcur, index):
+			self.rawcur = rawcur
+			self.index = index
+		
+		def fetch(self, n = None, cols = All):
+			
+			I = self.index.fetch(n)
+			T = numpy.dtype(self.rawcur.type)
+			begin = I * T.itemsize
+			end = begin + T.itemsize
+			
 	def __init__(self, data, type, name = '_'):
 		self.data = data
 		self.type = dtype.dtype(type)
@@ -15,6 +29,7 @@ class RawCur(cursor):
 		self.off = 0
 	
 	def fetch(self, n = None, cols = All):
+		n = n or 1024
 		bytes = self.data[self.off:self.off + n * self.itemsize]
 		a = numpy.fromstring(bytes, self.type)
 		nread = len(a)
@@ -22,6 +37,10 @@ class RawCur(cursor):
 		return {
 			self.name : a
 		}
+	
+	def __getitem__(self, I):
+		return self.RandIter(self, I)
+	
 
 def write_raw(f, curs, col):
 	fetchsz = 4096
