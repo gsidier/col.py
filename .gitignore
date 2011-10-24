@@ -1,1 +1,4 @@
 *.pyc
+util.cpp
+*.so
+build
