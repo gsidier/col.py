@@ -50,7 +50,7 @@ class indexed(cursor):
 		self.columns = self.curs.columns
 	
 	def fetch(self, n = None, cols = All):
-		r = self.index.fetch()
+		r = self.index.fetch(n)
 		I = r.itervalues().next()
 		return self.curs.fetch(I, cols)
 	
@@ -158,7 +158,7 @@ class npcur(cursor):
 	
 		if hasattr(n, '__iter__'):
 			I = numpy.array(n)
-			res = self.arr(I)
+			res = self.arr[I]
 			return { self.name: res }
 		else:
 		
