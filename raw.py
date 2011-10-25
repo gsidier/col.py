@@ -16,12 +16,15 @@ class RawCur(cursor):
 		def fetch(self, n = None, cols = All):
 			
 			I = self.index.fetch(n)
+			I = I.itervalues().next()
 			T = numpy.dtype(self.rawcur.type)
 			begin = I * T.itemsize
 			end = begin + T.itemsize
 			bytes = mmap_read_offsets(self.rawcur.data, begin, end)
 			res = numpy.fromstring(bytes, dtype=T)
-			return res
+			return {
+				self.rawcur.name: res
+			}
 			
 	def __init__(self, data, type, name = '_'):
 		self.data = data
