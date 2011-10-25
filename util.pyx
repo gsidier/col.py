@@ -5,7 +5,6 @@ import mmap
 import numpy
 
 cdef extern from "Python.h":
-	#ctypedef Py_ssize_t (*readbufferproc)(PyObject *, Py_ssize_t, void **)
 	ctypedef Py_ssize_t (*readbufferproc)(object, Py_ssize_t, void **)
 	ctypedef Py_ssize_t (*writebufferproc)(object, Py_ssize_t, void **)
 	
@@ -38,12 +37,10 @@ def mmap_random_access(m, numpy.ndarray[numpy.int_t, ndim=1] begin, numpy.ndarra
 	cdef void * dst_v
 	cdef PyBufferProcs * res_buf = <PyBufferProcs *> res_t.tp_as_buffer
 	cdef writebufferproc write_b = m_buf.bf_getwritebuffer
-	write_b(m, 0, & dst_v)
+	write_b(res, 0, & dst_v)
 	cdef char * dst = <char*> dst_v
 
 	cdef int off = 0
-	#getbytes = m.__getslice__
-	#setbytes = res.__setslice__
 	cdef int i1
 	cdef int i2
 	cdef int k
@@ -52,9 +49,6 @@ def mmap_random_access(m, numpy.ndarray[numpy.int_t, ndim=1] begin, numpy.ndarra
 		i1 = begin[i]
 		i2 = end[i]
 		k = i2 - i1
-		#setbytes(off, off+k, getbytes(i1, i2))
-		##for j in xrange(k):
-		##	res[off + j] = m[i1 + k]
 		memcpy(dst + off, src + i1, k)
 		off += k
 	return res
