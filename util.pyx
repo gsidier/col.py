@@ -19,7 +19,7 @@ cdef extern from "Python.h":
 # which gives efficient access to the underlying data.
 # (see http://docs.python.org/c-api/buffer.html for the python side of things)
 # (and http://wiki.cython.org/enhancements/buffer for the cython side)
-def mmap_random_access(m, numpy.ndarray[numpy.int_t, ndim=1] begin, numpy.ndarray[numpy.int_t, ndim=1] end):
+def mmap_read_offsets(m, numpy.ndarray[numpy.int_t, ndim=1] begin, numpy.ndarray[numpy.int_t, ndim=1] end):
 	
 	cdef int i
 	cdef int n = len(begin)
@@ -40,11 +40,11 @@ def mmap_random_access(m, numpy.ndarray[numpy.int_t, ndim=1] begin, numpy.ndarra
 	write_b(res, 0, & dst_v)
 	cdef char * dst = <char*> dst_v
 
-	cdef int off = 0
-	cdef int i1
-	cdef int i2
-	cdef int k
-	cdef int j
+	cdef size_t off = 0
+	cdef size_t i1
+	cdef size_t i2
+	cdef size_t k
+	cdef size_t j
 	for i in xrange(n):
 		i1 = begin[i]
 		i2 = end[i]
@@ -52,3 +52,14 @@ def mmap_random_access(m, numpy.ndarray[numpy.int_t, ndim=1] begin, numpy.ndarra
 		memcpy(dst + off, src + i1, k)
 		off += k
 	return res
+
+def has_old_buffer_interface(x):
+	cdef PyTypeObject * t = <PyTypeObject*> x.__class__
+	cdef PyBufferProcs * buf = <PyBufferProcs *> t.tp_as_buffer
+	return buf != <PyBufferProcs*>0
+
+def has_new_buffer_interface(x):
+	
+	cdef object[char] y
+	y = x
+
