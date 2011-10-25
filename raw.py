@@ -1,6 +1,6 @@
 from curs import cursor, All
 import dtype
-import util
+from util import mmap_read_offsets
 
 import mmap
 import numpy
@@ -19,6 +19,9 @@ class RawCur(cursor):
 			T = numpy.dtype(self.rawcur.type)
 			begin = I * T.itemsize
 			end = begin + T.itemsize
+			bytes = mmap_read_offsets(self.rawcur.data, begin, end)
+			res = numpy.fromstring(bytes, dtype=T)
+			return res
 			
 	def __init__(self, data, type, name = '_'):
 		self.data = data
