@@ -10,9 +10,11 @@ class cursor(object):
 	
 	columns = NotImplemented # { name: dtype }
 	
-	# n - If not specified, return as many rows as you want.
-	#     If specified then try to return n rows unless eof was 
-	#     reached in the process.
+	# n - > If not specified, return as many rows as you want.
+	#     > If specified and an integer then try to return n rows unless eof was 
+	#       reached in the process.
+	#     > If specified and an iterable then return the rows indexed by 
+	#       the elements of n.
 	# 
 	# cols - subset of columns to fetch, or All
 	def fetch(self, n = None, cols = All):
@@ -29,8 +31,35 @@ class cursor(object):
 		# 
 		# where a, b, ... z are columns of this cursor.
 		return select(self, expr)
+	
+	indexable = 0
+	
+	def __getitem__(self, index):
+		if self.indexable:
+			return indexed(self, index)
+		else:
+			raise TypeError("Cursor of type %s is not indexable." % type(self))
+
+class indexed(cursor):
+	
+	indexable = 1
+	
+	def __init__(self, curs, index):
+		self.curs = curs
+		self.index = index
+		self.columns = self.curs.columns
+	
+	def fetch(self, n = None, cols = All):
+		r = self.index.fetch()
+		I = r.itervalues().next()
+		return self.curs.fetch(I, cols)
+	
+	def __getitem__(self, index2):
+		return indexed(self.curs, self.index[index2])
 
 class select(cursor):
+	
+	indexable = 1
 	
 	def __init__(self, c, expr):
 		self.c = c
@@ -79,6 +108,8 @@ def transpose_dict(d):
 # Horizontal join
 class hjoin(cursor):
 	
+	indexable = 1
+	
 	def __init__(self, *cursors):
 		self.cursors = cursors
 		self.columns = dict(
@@ -108,10 +139,12 @@ class hjoin(cursor):
 			res.update(res_i)
 		
 		return res
-
+	
 hj = hjoin
 
 class npcur(cursor):
+	
+	indexable = 1
 	
 	def __init__(self, arr, name = 'val'):
 		self.name = name
@@ -122,16 +155,22 @@ class npcur(cursor):
 	def fetch(self, n = None, cols = All):
 		if cols is All:
 			cols = self.columns.keys()
+	
+		if hasattr(n, '__iter__'):
+			I = numpy.array(n)
+			res = self.arr(I)
+			return { self.name: res }
+		else:
 		
-		n = n or 128
-		n = min(n, 128)
-		
-		i = self.i
-		
-		res = self.arr[i : i + n]
-		i += len(res)
-		
-		self.i = i
-		return { self.name: res }
+			n = n or 128
+			n = min(n, 128)
+			
+			i = self.i
+			
+			res = self.arr[i : i + n]
+			i += len(res)
+			
+			self.i = i
+			return { self.name: res }
 
 

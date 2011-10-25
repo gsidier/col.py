@@ -7,25 +7,6 @@ import numpy
 
 class RawCur(cursor):
 	
-	class RandIter(cursor):
-		
-		def __init__(self, rawcur, index):
-			self.rawcur = rawcur
-			self.index = index
-		
-		def fetch(self, n = None, cols = All):
-			
-			I = self.index.fetch(n)
-			I = I.itervalues().next()
-			T = numpy.dtype(self.rawcur.type)
-			begin = I * T.itemsize
-			end = begin + T.itemsize
-			bytes = mmap_read_offsets(self.rawcur.data, begin, end)
-			res = numpy.fromstring(bytes, dtype=T)
-			return {
-				self.rawcur.name: res
-			}
-			
 	def __init__(self, data, type, name = '_'):
 		self.data = data
 		self.type = dtype.dtype(type)
@@ -35,18 +16,29 @@ class RawCur(cursor):
 		self.off = 0
 	
 	def fetch(self, n = None, cols = All):
-		n = n or 1024
-		bytes = self.data[self.off:self.off + n * self.itemsize]
-		a = numpy.fromstring(bytes, self.type)
-		nread = len(a)
-		self.off += len(bytes)
-		return {
-			self.name : a
-		}
-	
-	def __getitem__(self, I):
-		return self.RandIter(self, I)
-	
+		if hasattr(n, '__iter__'):
+			I = numpy.array(n)
+			T = numpy.dtype(self.type)
+			begin = I * T.itemsize
+			end = begin + T.itemsize
+			print begin
+			print end
+			print end - begin
+			bytes = mmap_read_offsets(self.data, begin, end)
+			res = numpy.fromstring(bytes, dtype=T)
+			return {
+				self.name: res
+			}
+		
+		else:
+			n = n or 1024
+			bytes = self.data[self.off:self.off + n * self.itemsize]
+			a = numpy.fromstring(bytes, self.type)
+			nread = len(a)
+			self.off += len(bytes)
+			return {
+				self.name : a
+			}
 
 def write_raw(f, curs, col):
 	fetchsz = 4096
