@@ -20,6 +20,21 @@ cdef extern from "Python.h":
 # (see http://docs.python.org/c-api/buffer.html for the python side of things)
 # (and http://wiki.cython.org/enhancements/buffer for the cython side)
 def mmap_read_offsets(m, numpy.ndarray[numpy.int_t, ndim=1] begin, numpy.ndarray[numpy.int_t, ndim=1] end):
+	"""
+	res = mmap_read_offets(m, begin, end)
+	
+	If m supports the buffer interface, then this function will return a 
+	memory-mapped file containing the concatenation of the data byte sequences 
+	m[begin[i]:end[i]] for all i in range.
+	
+	Inputs:
+		* m: python object that implements the buffer interface
+		* begin: list of start offsets
+		* end: list of end offsets
+	
+	Output:
+		* res: a memory-mapped file
+	"""
 	
 	cdef int i
 	cdef int n = len(begin)
@@ -54,12 +69,37 @@ def mmap_read_offsets(m, numpy.ndarray[numpy.int_t, ndim=1] begin, numpy.ndarray
 	return res
 
 def has_old_buffer_interface(x):
+	"""
+	Python supports a so-called "Buffer Interface" that allows efficient 
+	access to the C implementation of an object that is implemented in C and 
+	implements the interface.
+	
+	Furthermore as is often the case in Python there are 2 competing versions 
+	of the buffer interface, the "old-style interface" and the "new-style" 
+	interface. A python object can presumably implement either, none or both 
+	of these.
+	
+	This function returns True iff the argument supports the old-style buffer 
+	interface.
+	"""
 	cdef PyTypeObject * t = <PyTypeObject*> x.__class__
 	cdef PyBufferProcs * buf = <PyBufferProcs *> t.tp_as_buffer
 	return buf != <PyBufferProcs*>0
 
 def has_new_buffer_interface(x):
+	"""
+	Python supports a so-called "Buffer Interface" that allows efficient 
+	access to the C implementation of an object that is implemented in C and 
+	implements the interface.
 	
+	Furthermore as is often the case in Python there are 2 competing versions 
+	of the buffer interface, the "old-style interface" and the "new-style" 
+	interface. A python object can presumably implement either, none or both 
+	of these.
+	
+	This function returns True iff the argument supports the new-style buffer 
+	interface.
+	"""
 	cdef object[char] y
 	y = x
 
